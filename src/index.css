@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-dark: #020202;
+  --bg-panel: rgba(255, 255, 255, 0.03);
+  --neon-green: #00ffa3;
+  --neon-blue: #00e5ff;
+}
+
+@layer base {
+  * {
+    cursor: none !important;
+  }
+
+  input, textarea, [contenteditable="true"], .text-input {
+    cursor: text !important;
+  }
+
+  body {
+    @apply bg-[#020202] text-white font-sans overflow-x-hidden;
+  }
+
+  html {
+    @apply scroll-smooth;
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Cinematic Overlays */
+#noise-overlay {
+  @apply fixed inset-0 z-50 pointer-events-none opacity-[0.04];
+  background: url('https://grainy-gradients.vercel.app/noise.svg');
+}
+
+.vignette {
+  @apply fixed inset-0 z-40 pointer-events-none;
+  background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.8) 120%);
+}
+
+.glass-panel {
+  @apply bg-[rgba(255,255,255,0.03)] backdrop-blur-3xl border border-[rgba(255,255,255,0.05)] shadow-[0_12px_48px_0_rgba(0,0,0,0.95)];
+}
+
+.floating-slow { animation: floating 6s ease-in-out infinite; }
+@keyframes floating {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.1); }
+}
