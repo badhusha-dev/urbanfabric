@@ -3,10 +3,13 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 import CustomCursor from './components/CustomCursor.jsx'
+import ErrorBoundary from './components/common/ErrorBoundary.jsx'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <CustomCursor />
-    <App />
+    <ErrorBoundary>
+      <CustomCursor />
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>,
 )

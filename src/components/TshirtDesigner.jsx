@@ -1,59 +1,94 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Rnd } from 'react-rnd';
-import { 
-  Trash2, Type, Image as ImageIcon, ArrowUp, ArrowDown, 
-  RotateCw, GripVertical, Settings, Layers, Shapes, 
-  Download, Eye, Lock, Unlock, EyeOff, Minus, Plus, 
-  ShoppingCart, CheckCircle2, X, ChevronRight, Package, 
-  CreditCard, Truck, User, ArrowLeft, Camera, MessageCircle, 
-  UserPlus, Command, Zap, Star, RefreshCcw, Info, InfoIcon, 
-  ExternalLink, ZoomIn, ZoomOut, Maximize2, Sparkles
+import {
+  Trash2, Type, Image as ImageIcon, ArrowUp, ArrowDown,
+  RotateCw, GripVertical, Settings, Layers, Shapes,
+  Download, Eye, Lock, Unlock, EyeOff, Minus, Plus,
+  ShoppingCart, X, ChevronRight, Package,
+  CreditCard, Truck, User, ArrowLeft, MessageCircle,
+  Command, Zap, Star, RefreshCcw, Info,
+  Maximize2, Sparkles, AlignLeft, AlignCenter, AlignRight,
+  Bold, Palette, Upload, Library, Pipette
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
+import TshirtCanvas from './TshirtCanvas';
+import { Suspense } from 'react';
 
-const FONTS = ['Orbitron', 'Inter', 'Bungee', 'Satisfy', 'Bebas Neue', 'Outfit'];
+const FONTS = ['Orbitron', 'Inter', 'Bungee', 'Satisfy', 'Bebas Neue', 'Outfit', 'Rajdhani', 'Permanent Marker'];
 const SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 const DEPLOYMENT_WINDOW = "3–5 Days India-Wide";
 
+const DESIGN_LIBRARY = [
+  { id: 'lib1', label: '⚡ VOLT', type: 'text', content: '⚡ VOLT', fontFamily: 'Orbitron', fontWeight: '900', color: '#ffe100', fontSize: 28 },
+  { id: 'lib2', label: '🔥 FIRE', type: 'text', content: '🔥 FIRE', fontFamily: 'Bungee', fontWeight: '400', color: '#ff3b3b', fontSize: 28 },
+  { id: 'lib3', label: 'URBAN', type: 'text', content: 'URBAN\nFABRIC', fontFamily: 'Bebas Neue', fontWeight: '400', color: '#ffffff', fontSize: 24 },
+  { id: 'lib4', label: '∞ INF', type: 'text', content: '∞', fontFamily: 'Inter', fontWeight: '900', color: '#00e5ff', fontSize: 48 },
+  { id: 'lib5', label: 'FORGE', type: 'text', content: 'FORGE', fontFamily: 'Orbitron', fontWeight: '900', color: '#00ffa3', fontSize: 26 },
+  { id: 'lib6', label: '★ STAR', type: 'text', content: '★★★★★', fontFamily: 'Inter', fontWeight: '900', color: '#ffe100', fontSize: 22 },
+  { id: 'lib7', label: 'DRIP', type: 'text', content: 'NO CAP\nDRIP', fontFamily: 'Bungee', fontWeight: '400', color: '#ffb7b7', fontSize: 22 },
+  { id: 'lib8', label: 'VOID', type: 'text', content: 'INTO THE\nVOID', fontFamily: 'Bebas Neue', fontWeight: '400', color: '#888888', fontSize: 22 },
+];
+
+const TEXT_COLORS = [
+  '#ffffff','#000000','#ff3b3b','#00e5ff','#00ff88',
+  '#ffe100','#ff9933','#ffb7b7','#800080','#ff69b4',
+  '#00ffa3','#888888'
+];
+
 const COLOR_VARIANTS = [
-  { id: 'white', name: 'Solar White', hex: '#ffffff', image: '/tshirts/tshirt-white.png', backImage: '/tshirts/tshirt-white-back.png', popular: true },
-  { id: 'black', name: 'Pure Void', hex: '#0a0a0a', image: '/tshirts/tshirt-black.png', backImage: '/tshirts/tshirt-white-back.png', popular: true, dark: true },
-  { id: 'grey', name: 'Atomic Grey', hex: '#888888', image: '/tshirts/tshirt-grey.png', backImage: '/tshirts/tshirt-white-back.png' },
-  { id: 'red', name: 'Pulse Red', hex: '#ff3b3b', image: '/tshirts/tshirt-red.png', backImage: '/tshirts/tshirt-white-back.png' },
-  { id: 'blue', name: 'Cyber Blue', hex: '#00e5ff', image: '/tshirts/tshirt-blue.png', backImage: '/tshirts/tshirt-white-back.png' },
-  { id: 'green', name: 'Neon Green', hex: '#00ff88', image: '/tshirts/tshirt-green.png', backImage: '/tshirts/tshirt-white-back.png' },
-  { id: 'yellow', name: 'Solar Yellow', hex: '#ffe100', image: '/tshirts/tshirt-yellow.png', backImage: '/tshirts/tshirt-white-back.png' },
-  { id: 'orange', name: 'Solar Orange', hex: '#ff9933', image: '/tshirts/tshirt-orange.png', backImage: '/tshirts/tshirt-white-back.png' },
-  { id: 'maroon', name: 'Imperial Maroon', hex: '#800000', image: '/tshirts/tshirt-maroon.png', backImage: '/tshirts/tshirt-white-back.png', dark: true },
-  { id: 'navy', name: 'Royal Navy', hex: '#000080', image: '/tshirts/tshirt-navy.png', backImage: '/tshirts/tshirt-white-back.png', popular: true, dark: true },
-  { id: 'pink', name: 'Pastel Rose', hex: '#ffb7b7', image: '/tshirts/tshirt-pink.png', backImage: '/tshirts/tshirt-white-back.png' }
+  { id: 'white',  name: 'Solar White',     hex: '#ffffff', image: '/tshirts/tshirt-white.png',  backImage: '/tshirts/tshirt-white-back.png', popular: true },
+  { id: 'black',  name: 'Pure Void',       hex: '#0a0a0a', image: '/tshirts/tshirt-black.png',  backImage: '/tshirts/tshirt-black-back.png', popular: true, dark: true },
+  { id: 'grey',   name: 'Urban Alloy',     hex: '#555555', image: '/tshirts/tshirt-white.png',  backImage: '/tshirts/tshirt-white-back.png' },
+  { id: 'navy',   name: 'Deep Protocol',   hex: '#001f3f', image: '/tshirts/tshirt-black.png',  backImage: '/tshirts/tshirt-black-back.png', dark: true },
+  { id: 'maroon', name: 'Crimson Core',    hex: '#800000', image: '/tshirts/tshirt-white.png',  backImage: '/tshirts/tshirt-white-back.png', dark: true },
+  { id: 'purple', name: 'Violet Pulse',    hex: '#4b0082', image: '/tshirts/tshirt-white.png',  backImage: '/tshirts/tshirt-white-back.png', dark: true },
+  { id: 'blue',   name: 'Neon Blue',       hex: '#00e5ff', image: '/tshirts/tshirt-white.png',  backImage: '/tshirts/tshirt-white-back.png' },
+  { id: 'green',  name: 'Forest Node',     hex: '#1e4d2b', image: '/tshirts/tshirt-white.png',  backImage: '/tshirts/tshirt-white-back.png', dark: true },
+  { id: 'orange', name: 'Solar Orange',    hex: '#ff9933', image: '/tshirts/tshirt-white.png',  backImage: '/tshirts/tshirt-white-back.png' },
 ];
 
 const TshirtDesigner = () => {
   // Global View State
-  const [activeSide, setActiveSide] = useState('front'); // 'front' | 'back'
+  const [activeSide, setActiveSide] = useState('front');
   const [activeColor, setActiveColor] = useState(COLOR_VARIANTS[0]);
+  const [customColor, setCustomColor] = useState('#ffffff');
   const [hoverColor, setHoverColor] = useState(null);
-  
-  // Element State (Split architecture)
+
+  // Element State
   const [frontElements, setFrontElements] = useState([]);
   const [backElements, setBackElements] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  
+
   // UI State
   const [activeTab, setActiveTab] = useState('text');
   const [gridVisible, setGridVisible] = useState(false);
-  const [imageLoading, setImageLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  
+  const [dragOver, setDragOver] = useState(false);
+
   // Order State
   const [size, setSize] = useState('M');
   const [quantity, setQuantity] = useState(1);
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
-  const [currentView, setCurrentView] = useState('editor'); // editor | checkout
+  const [currentView, setCurrentView] = useState('editor');
   const [previewSubject, setPreviewSubject] = useState('female');
+  const [viewAngle, setViewAngle] = useState('front');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const imageInputRef = useRef(null);
+
+  // Production Analytics Agent
+  const trackAction = (event, params = {}) => {
+    console.log(`URBAN_FABRIC_EVENT: [${event}]`, params);
+    // Here you would normally call window.gtag('event', event, params) or similar
+  };
+
+  // Performance & Responsive Agent
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const stageRef = useRef(null);
 
@@ -62,106 +97,308 @@ const TshirtDesigner = () => {
   const setCurrentElements = activeSide === 'front' ? setFrontElements : setBackElements;
   
   // -- PRICING ENGINE --
-  const basePrice = 999;
+  // -- ADVANCED PRICING ENGINE --
+  const BASE_PRICE = 699;
   const pricing = useMemo(() => {
-    let elementsCost = (frontElements.length + backElements.length) * 100;
-    let multicolorBonus = (frontElements.length + backElements.length) > 2 ? 150 : 0;
-    let backBonus = backElements.length > 0 ? 300 : 0; // Printing on both sides cost more
+    let price = BASE_PRICE;
+    const all = [...frontElements, ...backElements];
+    
+    // Per-layer pricing
+    const textCount = all.filter(e => e.type === 'text').length;
+    const imageCount = all.filter(e => e.type === 'image').length;
+    price += textCount * 50;
+    price += imageCount * 100;
+
+    // Bonus: Print Volume (Large Design)
+    const hasLarge = all.some(e => e.width > 160 || e.height > 160);
+    if (hasLarge) price += 50;
+
+    // Bonus: Front + Back complexity
+    if (frontElements.length > 0 && backElements.length > 0) price += 100;
+
+    // Bonus: Color Diversity
+    const uniqueColors = new Set(all.map(e => e.color)).size;
+    if (uniqueColors > 2) price += 50;
+
     return {
-       base: basePrice,
-       elements: elementsCost,
-       special: multicolorBonus + backBonus,
-       total: (basePrice + elementsCost + multicolorBonus + backBonus) * quantity
+       base: BASE_PRICE,
+       textCharge: textCount * 50,
+       imageCharge: imageCount * 100,
+       complexityBonus: (hasLarge ? 50 : 0) + (frontElements.length > 0 && backElements.length > 0 ? 100 : 0) + (uniqueColors > 2 ? 50 : 0),
+       unit: price,
+       total: price * quantity
     };
   }, [frontElements, backElements, quantity]);
 
-  // -- SMART CONTRAST AGENT --
+  // -- ACCESSIBILITY AGENT --
   const contrastWarning = useMemo(() => {
-    const selected = currentElements.find(el => el.id === selectedId);
-    if (!selected || selected.type !== 'text') return null;
-    const isDarkShirt = activeColor.dark;
-    const isDarkText = ['#000000', '#000080', '#800000'].includes(selected.color);
-    const isLightText = ['#ffffff', '#00e5ff', '#00ff88', '#ffe100', '#ffb7b7'].includes(selected.color);
+    const selEl = currentElements.find(e => e.id === selectedId);
+    if (!selEl || selEl.type !== 'text') return null;
     
-    if (isDarkShirt && isDarkText) return "LOW CONTRAST: Use lighter font for better visibility.";
-    if (!isDarkShirt && isLightText && activeColor.id === 'white') return "LOW CONTRAST: Use darker font on light base.";
+    // Standard Contrast Shield (Placeholder for real luminance calculation)
+    if (activeColor.id === 'white' && (selEl.color === '#ffffff' || selEl.color === '#eeeeee')) return "LOW VISIBILITY: DIM PROTOCOL";
+    if (activeColor.id === 'black' && (selEl.color === '#000000' || selEl.color === '#111111')) return "LOW VISIBILITY: VOID OVERLAP";
     return null;
-  }, [selectedId, activeColor, currentElements]);
+  }, [selectedId, currentElements, activeColor]);
 
-  // Designer Logic
-  const addElement = (type) => {
+  // -- PRODUCTION ORDER AGENT --
+  const [checkoutData, setCheckoutData] = useState({ name: '', phone: '', address: '', city: '', pincode: '', email: '' });
+  const [orderErrors, setOrderErrors] = useState({});
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [lockedOrder, setLockedOrder] = useState(null);
+
+  const validateDetails = () => {
+    const errors = {};
+    if (!checkoutData.name.trim()) errors.name = "ID Required";
+    if (!/^\d{10}$/.test(checkoutData.phone)) errors.phone = "Invalid Comm Link (10 digits)";
+    if (!checkoutData.address.trim()) errors.address = "Coordinates Required";
+    if (!checkoutData.city.trim()) errors.city = "Sector/City Required";
+    if (!/^\d{6}$/.test(checkoutData.pincode)) errors.pincode = "Invalid Pin Protocol";
+    setOrderErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const prepareCheckout = async () => {
+    setIsExporting(true);
+    setSelectedId(null); // Deselect for clean snapshot
+    
+    // Tiny delay for UI to settle (handles selection removal animations)
+    await new Promise(r => setTimeout(r, 150));
+    
+    try {
+      const canvas = await html2canvas(stageRef.current, { 
+        backgroundColor: null, 
+        logging: false, 
+        scale: 2,
+        useCORS: true,
+        allowTaint: true
+      });
+      const previewImage = canvas.toDataURL('image/png');
+      
+      setLockedOrder({
+        id: `UF-${Date.now()}`,
+        design: { front: frontElements, back: backElements },
+        color: activeColor,
+        price: { ...pricing },
+        quantity,
+        size,
+        previewImage,
+        timestamp: new Date().toISOString(),
+      });
+      
+      setCurrentView('checkout');
+    } catch (e) {
+      console.error("FORGE_SNAPSHOT_ERROR", e);
+      alert("Snapshot Synchronization Failed: Please verify design and retry.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const placeOrder = async () => {
+    // 1. Transaction Validation
+    if (!lockedOrder && frontElements.length === 0 && backElements.length === 0) {
+       alert("Design Forge Empty: Add elements to your design first.");
+       return;
+    }
+    
+    if (currentView === 'checkout' && !validateDetails()) return;
+
+    setIsProcessingPayment(true);
+    trackAction('order_authorization_start', { total: lockedOrder?.price?.total || pricing.total });
+
+    try {
+      // 2. Pricing & Asset Lock (Critical for unmounted states)
+      const finalPricing = lockedOrder?.price || pricing;
+      const previewImage = lockedOrder?.previewImage;
+      
+      if (!previewImage && currentView === 'checkout') {
+        throw new Error("Asset Desync: Design snapshot missing in unmounted state.");
+      }
+
+      // If called from a view where the editor IS mounted (e.g. mobile direct buy)
+      let currentPreview = previewImage;
+      if (!currentPreview && stageRef.current) {
+         const canvas = await html2canvas(stageRef.current, { backgroundColor: null, logging: false, scale: 2 });
+         currentPreview = canvas.toDataURL('image/png');
+      }
+
+      const orderData = {
+        id: lockedOrder?.id || `UF-${Date.now()}`,
+        design: lockedOrder?.design || { front: frontElements, back: backElements },
+        color: lockedOrder?.color || activeColor,
+        price: finalPricing,
+        quantity: lockedOrder?.quantity || quantity,
+        size: lockedOrder?.size || size,
+        previewImage: currentPreview,
+        recipient: checkoutData,
+        timestamp: new Date().toISOString(),
+        paymentStatus: 'authorizing'
+      };
+
+      setLockedOrder(orderData); // Persist locked state
+
+      // 4. Simulated Razorpay Protocol (Secure Handshake)
+      await new Promise(resolve => setTimeout(resolve, 2000)); 
+
+      const isSuccess = Math.random() > 0.05; 
+      
+      if (isSuccess) {
+        orderData.paymentStatus = 'success';
+        const existingOrders = JSON.parse(localStorage.getItem('urban_fabric_orders') || '[]');
+        localStorage.setItem('urban_fabric_orders', JSON.stringify([...existingOrders, orderData]));
+        
+        trackAction('payment_verified', { orderId: orderData.id });
+        setCurrentView('success');
+      } else {
+        throw new Error("Razorpay Transaction Aborted by Neural Sink");
+      }
+      
+    } catch (error) {
+      console.error("Order Forge Failure:", error);
+      alert("Payment Context Aborted: " + (error.message.includes('Snapshot') ? "Design capture failed." : "Please verify your comms and retry."));
+      trackAction('payment_failure', { error: error.message });
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  // ── Designer Logic ───────────────────────────────────────────────────────────
+  const addElement = (type, overrides = {}) => {
     const isDark = activeColor.dark;
     const newEl = {
       id: Date.now(),
       type,
-      content: type === 'text' ? 'URBAN FABRIC' : 'https://api.dicebear.com/7.x/pixel-art/svg?seed=URBAN_FABRIC',
-      x: 75, y: 100,
-      width: 120, height: 40,
+      content: type === 'text' ? 'FORGE IDENTITY' : '',
+      x: 70, y: 90,
+      width: type === 'image' ? 110 : 120,
+      height: type === 'image' ? 110 : 44,
       fontSize: 22,
       fontFamily: 'Orbitron',
       fontWeight: '900',
+      textAlign: 'center',
       color: isDark ? '#ffffff' : '#000000',
-      rotate: 0, opacity: 1, zIndex: currentElements.length + 1,
-      visible: true
+      outline: false,
+      outlineColor: '#000000',
+      shadow: false,
+      glow: false,
+      rotate: 0,
+      opacity: 1,
+      zIndex: currentElements.length + 1,
+      visible: true,
+      locked: false,
+      ...overrides,
     };
-    if (type === 'image') { newEl.width = 100; newEl.height = 100; }
     setCurrentElements([...currentElements, newEl]);
     setSelectedId(newEl.id);
+    trackAction(`add_${type}`, { id: newEl.id });
   };
 
-  const updateElement = (id, updates) => setCurrentElements(currentElements.map(el => el.id === id ? { ...el, ...updates } : el));
+  const addFromLibrary = (item) => {
+    addElement('text', {
+      content: item.content,
+      fontFamily: item.fontFamily,
+      fontWeight: item.fontWeight,
+      color: item.color,
+      fontSize: item.fontSize,
+    });
+  };
+
+  const handleImageUpload = useCallback((file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      addElement('image', { content: e.target.result, width: 120, height: 120 });
+    };
+    reader.readAsDataURL(file);
+  }, [currentElements, activeSide]);
+
+  const updateElement = (id, updates) =>
+    setCurrentElements(currentElements.map(el => el.id === id ? { ...el, ...updates } : el));
+
   const deleteElement = (id) => {
-    setCurrentElements(currentElements.filter(el => el.id !== (id || selectedId)));
-    if (selectedId === (id || selectedId)) setSelectedId(null);
+    const target = id || selectedId;
+    setCurrentElements(currentElements.filter(el => el.id !== target));
+    if (selectedId === target) setSelectedId(null);
+  };
+
+  const bringForward = (id) => {
+    const el = currentElements.find(e => e.id === id);
+    if (!el) return;
+    const maxZ = Math.max(...currentElements.map(e => e.zIndex));
+    if (el.zIndex < maxZ) updateElement(id, { zIndex: el.zIndex + 1 });
+  };
+
+  const sendBackward = (id) => {
+    const el = currentElements.find(e => e.id === id);
+    if (!el) return;
+    const minZ = Math.min(...currentElements.map(e => e.zIndex));
+    if (el.zIndex > minZ) updateElement(id, { zIndex: el.zIndex - 1 });
   };
 
   const addToCart = async () => {
     if (frontElements.length === 0 && backElements.length === 0) return;
     setIsExporting(true);
     setSelectedId(null);
+    trackAction('checkout_initiated', { items: frontElements.length + backElements.length });
+    
     setTimeout(async () => {
-      const canvas = await html2canvas(stageRef.current, { backgroundColor: null, scale: 0.8 });
-      const designPreview = canvas.toDataURL('image/png');
-      const cartItem = {
-         id: Date.now(),
-         designImage: designPreview,
-         color: activeColor.name,
-         colorHex: activeColor.hex,
-         size,
-         quantity,
-         price: pricing.total,
-         frontCount: frontElements.length,
-         backCount: backElements.length
-      };
-      setCart([...cart, cartItem]);
-      setIsExporting(false);
-      setShowCart(true);
-    }, 300);
+      try {
+        const canvas = await html2canvas(stageRef.current, { 
+          backgroundColor: null, 
+          scale: 0.8,
+          useCORS: true,
+          allowTaint: true
+        });
+        const designPreview = canvas.toDataURL('image/png');
+        const cartItem = {
+           id: Date.now(),
+           designImage: designPreview,
+           color: activeColor.name,
+           colorHex: activeColor.hex,
+           size,
+           quantity,
+           price: pricing.total,
+           frontCount: frontElements.length,
+           backCount: backElements.length
+        };
+        setCart([...cart, cartItem]);
+        setIsExporting(false);
+        setShowCart(true);
+        trackAction('cart_add_success', { total: pricing.total });
+        
+        import('canvas-confetti').then(confetti => confetti.default({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#00ffa3', '#00e5ff', '#ffffff']
+        }));
+      } catch (e) {
+        console.error("FORGE_EXPORT_ERROR", e);
+        setIsExporting(false);
+      }
+    }, 500);
   };
 
   return (
     <div className="w-full max-w-7xl mx-auto flex flex-col gap-8 text-white relative">
       
       {/* Premium Regional Navigation */}
-      <div className="flex justify-between items-end gap-10 px-4 border-b border-white/5 pb-10">
-         <div>
-            <h2 className="text-6xl font-hero font-black tracking-tighter uppercase leading-none mb-4">Forge <span className="text-neon-green">Master IN</span></h2>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 md:gap-10 px-4 border-b border-white/5 pb-6 md:pb-10">
+         <div className="w-full md:w-auto">
+            <h2 className="text-4xl md:text-6xl font-hero font-black tracking-tighter uppercase leading-none mb-4">Forge <span className="text-neon-green">Master IN</span></h2>
             <div className="flex items-center gap-5">
-               <span className="px-4 py-2 bg-white/5 rounded-full text-[9px] font-hero tracking-widest text-neon-blue font-bold uppercase">{DEPLOYMENT_WINDOW}</span>
-               <div className="flex -space-x-4">
-                  {[1,2,3].map(i => <div key={i} className="w-8 h-8 rounded-full border-2 border-black bg-white/10 overflow-hidden"><img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i * 123}`} /></div>)}
-                  <div className="w-8 h-8 rounded-full border-2 border-black bg-neon-green flex items-center justify-center text-[8px] font-black text-black">4k+</div>
-               </div>
+               <span className="px-4 py-2 bg-white/5 rounded-full text-[8px] md:text-[9px] font-hero tracking-widest text-neon-blue font-bold uppercase">{DEPLOYMENT_WINDOW}</span>
             </div>
          </div>
          
-         <div className="flex items-center gap-6">
-            <button onClick={() => window.open(`https://wa.me/91XXXXXXXXXX?text=Forge-Inquiry: Custom Allocation`)} className="px-8 py-5 bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/10 rounded-[28px] hover:bg-[#25D366]/20 transition-all font-hero text-[11px] uppercase tracking-widest flex items-center gap-3">
-               <MessageCircle size={18} /> Direct Support
+         <div className="flex items-center gap-4 md:gap-6 w-full md:w-auto">
+            <button onClick={() => window.open(`https://wa.me/91XXXXXXXXXX?text=Forge-Inquiry: Custom Allocation`)} className="flex-1 md:flex-none px-6 py-4 bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/10 rounded-[24px] hover:bg-[#25D366]/20 transition-all font-hero text-[10px] uppercase tracking-widest flex items-center justify-center gap-3">
+               <MessageCircle size={16} /> <span className="hidden sm:inline">Direct Support</span>
             </button>
-            <button onClick={() => setShowCart(true)} className="relative p-7 bg-white/5 rounded-[32px] border border-white/5 hover:border-white/20 transition-all group shadow-2xl">
-               <ShoppingCart size={24} className="group-hover:scale-110 transition-transform" />
-               {cart.length > 0 && <span className="absolute -top-1 -right-1 w-7 h-7 bg-white text-black text-[11px] font-black rounded-full flex items-center justify-center shadow-neon">{cart.length}</span>}
+            <button onClick={() => setShowCart(true)} className="relative p-5 md:p-7 bg-white/5 rounded-[24px] md:rounded-[32px] border border-white/5 hover:border-white/20 transition-all group shadow-2xl">
+               <ShoppingCart size={20} className="group-hover:scale-110 transition-transform" />
+               {cart.length > 0 && <span className="absolute -top-1 -right-1 w-6 h-6 md:w-7 md:h-7 bg-white text-black text-[10px] md:text-[11px] font-black rounded-full flex items-center justify-center shadow-neon">{cart.length}</span>}
             </button>
          </div>
       </div>
@@ -169,18 +406,25 @@ const TshirtDesigner = () => {
       {currentView === 'editor' ? (
         <div className="flex flex-col xl:flex-row gap-6 bg-white/5 backdrop-blur-[120px] p-6 lg:p-12 rounded-[80px] border border-white/5 shadow-inner overflow-hidden relative">
           
-          {/* Tool Selector */}
-          <div className="flex xl:flex-col gap-4 z-20 pb-4 xl:pb-0 scrollbar-hide overflow-x-auto">
+          {/* Tool Selector - Global 3D Console */}
+          <div className="flex xl:flex-col gap-3 md:gap-4 z-40 transition-all duration-700 overflow-x-auto scrollbar-hide pb-2 xl:pb-0 mb-4 xl:mb-0">
             {[
-              { id: 'text', icon: <Type size={24}/>, label: 'Text' },
-              { id: 'graphics', icon: <Shapes size={24}/>, label: 'Graphics' },
-              { id: 'layers', icon: <Layers size={24}/>, label: 'Queue' },
-              { id: 'allocation', icon: <Zap size={24}/>, label: 'Alloc' },
-              { id: 'config', icon: <Command size={24}/>, label: 'Visual' }
+              { id: 'text', icon: <Type size={isMobile ? 20 : 24}/>, label: 'Text' },
+              { id: 'graphics', icon: <Shapes size={20}/>, label: 'Images' },
+              { id: 'queue', icon: <Layers size={20}/>, label: 'Queue' },
+              { id: 'allocation', icon: <Zap size={20}/>, label: 'Allo-C' },
+              { id: 'config', icon: <Command size={20}/>, label: 'Visual' }
             ].map(tab => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex flex-col items-center justify-center p-6 min-w-[100px] rounded-[44px] transition-all duration-700 ${activeTab === tab.id ? 'bg-white text-black shadow-3xl scale-105' : 'bg-white/5 text-white/30 hover:bg-white/10'}`}>
+              <button 
+                key={tab.id} 
+                onClick={() => {
+                   setActiveTab(tab.id);
+                   trackAction('switch_tab', { tab: tab.id });
+                }} 
+                className={`flex flex-col items-center justify-center p-4 md:p-6 min-w-[80px] md:min-w-[100px] rounded-[24px] md:rounded-[44px] transition-all duration-700 ${activeTab === tab.id ? 'bg-white text-black shadow-3xl scale-105' : 'bg-white/5 text-white/30 hover:bg-white/10'}`}
+              >
                  {tab.icon}
-                 <span className="text-[10px] mt-3 font-hero uppercase tracking-[0.2em]">{tab.label}</span>
+                 <span className="text-[8px] md:text-[10px] mt-2 md:mt-3 font-hero uppercase tracking-[0.2em]">{tab.label}</span>
               </button>
             ))}
           </div>
@@ -188,10 +432,12 @@ const TshirtDesigner = () => {
           {/* Designer Main Stage */}
           <div className="flex-1 min-h-[800px] bg-black rounded-[72px] border border-white/5 relative overflow-hidden flex items-center justify-center group shadow-2xl">
              
-             {/* Dual View Toggle */}
-             <div className="absolute top-10 left-1/2 -translate-x-1/2 z-30 flex p-2 bg-white/5 backdrop-blur-3xl rounded-[32px] border border-white/5 shadow-2xl">
-                <button onClick={() => setActiveSide('front')} className={`px-10 py-5 rounded-[28px] text-[11px] font-hero uppercase tracking-widest transition-all duration-500 font-black ${activeSide === 'front' ? 'bg-white text-black shadow-neon-white' : 'text-white/40 hover:text-white'}`}>Front</button>
-                <button onClick={() => setActiveSide('back')} className={`px-10 py-5 rounded-[28px] text-[11px] font-hero uppercase tracking-widest transition-all duration-500 font-black ${activeSide === 'back' ? 'bg-white text-black shadow-neon-white' : 'text-white/40 hover:text-white'}`}>Back</button>
+             {/* Side Switcher - Pure 3D Toggle */}
+             <div className="absolute top-10 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-6">
+                 <div className="flex p-1 bg-white/5 backdrop-blur-2xl rounded-full border border-white/5 animate-in fade-in zoom-in duration-500">
+                    <button onClick={() => setActiveSide('front')} className={`px-8 py-3 rounded-full text-[9px] font-hero uppercase tracking-widest transition-all ${activeSide === 'front' ? 'bg-white text-black shadow-lg' : 'text-white/40 hover:text-white'}`}>Front</button>
+                    <button onClick={() => setActiveSide('back')} className={`px-8 py-3 rounded-full text-[9px] font-hero uppercase tracking-widest transition-all ${activeSide === 'back' ? 'bg-white text-black shadow-lg' : 'text-white/40 hover:text-white'}`}>Back</button>
+                 </div>
              </div>
 
              {/* UI Feedback Overlays */}
@@ -218,21 +464,141 @@ const TshirtDesigner = () => {
                 </button>
              </div>
 
-             {/* Base Rendering Engine */}
-             <div ref={stageRef} className="relative w-full max-w-[650px] h-full flex justify-center items-center">
-                {imageLoading && <div className="absolute inset-0 z-40 bg-black/20 backdrop-blur-sm animate-pulse rounded-[72px]" />}
-                
-                <div className={`relative w-full h-[750px] flex items-center justify-center transition-all duration-1000 ${imageLoading ? 'opacity-20 translate-y-8 blur-3xl' : 'opacity-100 translate-y-0 blur-0'}`}>
-                   <img 
-                      src={activeSide === 'front' ? activeColor.image : activeColor.backImage} 
-                      className="w-full h-full object-contain pointer-events-none drop-shadow-[0_80px_120px_rgba(0,0,0,1)]" 
-                      onLoad={() => setImageLoading(false)}
-                   />
-                </div>
+              {/* Reality Projection Forge - ALWAYS 3D */}
+              <div 
+                ref={stageRef} 
+                className="relative w-full aspect-square md:aspect-auto md:h-full flex justify-center items-center transition-all duration-1000 max-w-full overflow-hidden"
+                style={{ minHeight: isMobile ? '500px' : '750px' }}
+              >
+
+                 {/* 3D Real-time Projection Layer */}
+                 <div className="absolute inset-0 z-10 transition-all duration-1000">
+                    <Suspense fallback={
+                      <div className="flex flex-col items-center justify-center gap-6 opacity-20 h-full">
+                        <div className="w-16 h-16 border-4 border-white/5 border-t-neon-green rounded-full animate-spin" />
+                        <span className="text-[8px] font-hero tracking-[0.5em] uppercase">Forging 3D...</span>
+                      </div>
+                    }>
+                       <TshirtCanvas 
+                          frontElements={frontElements}
+                          backElements={backElements}
+                          color={activeColor.hex} 
+                          activeSide={activeSide} 
+                          autoRotate={!selectedId}
+                          controlsEnabled={true}
+                          viewAngle={viewAngle}
+                          isDesignerMode={true}
+                          isMobile={isMobile}
+                       />
+                    </Suspense>
+                 </div>
+
+                 <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
+                    
+                    {/* High-End HUD - LEFT */}
+                    <div className="absolute top-1/2 left-4 md:left-10 -translate-y-1/2 flex flex-col gap-6 md:gap-10 animate-in slide-in-from-left duration-1000 scale-75 md:scale-100 origin-left">
+                       <div className="space-y-2">
+                          <span className="text-[8px] md:text-[10px] font-hero opacity-30 uppercase tracking-[0.5em] font-black">Variant Code</span>
+                          <div className="flex items-center gap-4 md:gap-6">
+                             <div className="w-3 h-3 md:w-4 md:h-4 rounded-full shadow-neon" style={{ backgroundColor: activeColor.hex }} />
+                             <span className="text-sm md:text-xl font-hero font-black uppercase tracking-widest">{activeColor.name}</span>
+                          </div>
+                       </div>
+                    </div>
+
+                    {/* Action HUD - RIGHT BOTTOM */}
+                    <div className="absolute bottom-6 md:bottom-10 right-4 md:right-10 flex flex-col items-end gap-4 md:gap-6 pointer-events-auto animate-in slide-in-from-right duration-700">
+                        <div className="text-right mb-2 md:mb-4">
+                           <span className="block text-[8px] md:text-[11px] font-hero opacity-30 font-black uppercase tracking-widest mb-1">Unit Cost</span>
+                           <span className="text-3xl md:text-7xl font-hero font-black text-white tracking-tighter drop-shadow-3xl leading-none">₹{pricing.total.toLocaleString()}</span>
+                        </div>
+                    </div>
+                 </div>
+                 
+                 <>
+                    {/* Mobile 3D Warning */}
+                    {isMobile && (
+                       <div className="absolute top-10 left-1/2 -translate-x-1/2 z-40 bg-black/60 backdrop-blur-xl px-4 py-2 border border-neon-blue/20 rounded-full animate-in fade-in slide-in-from-top duration-1000">
+                          <span className="text-[7px] font-hero text-neon-blue uppercase tracking-widest font-black">Performance mode active on mobile</span>
+                       </div>
+                    )}
+
+                    {/* 3D View Controls */}
+                    <div className={`absolute top-28 right-4 md:right-10 flex flex-col gap-3 md:gap-4 z-40 animate-in slide-in-from-right duration-1000 ${isMobile ? 'scale-90' : ''}`}>
+                       <button onClick={() => setViewAngle('front')} className={`px-4 md:px-6 py-2.5 md:py-3 rounded-2xl border text-[8px] md:text-[9px] font-hero uppercase tracking-widest transition-all ${viewAngle === 'front' ? 'bg-white text-black border-white shadow-neon-white font-black' : 'bg-black/40 text-white/40 border-white/10 hover:border-white/30'}`}>Front View</button>
+                       <button onClick={() => setViewAngle('back')} className={`px-4 md:px-6 py-2.5 md:py-3 rounded-2xl border text-[8px] md:text-[9px] font-hero uppercase tracking-widest transition-all ${viewAngle === 'back' ? 'bg-white text-black border-white shadow-neon-white font-black' : 'bg-black/40 text-white/40 border-white/10 hover:border-white/30'}`}>Back View</button>
+                       <div className="h-0.5 bg-white/5 w-full my-1" />
+                       <button onClick={() => setViewAngle('reset')} className="px-4 md:px-6 py-2.5 md:py-3 rounded-2xl border bg-black/60 text-white/40 border-white/10 hover:border-white/30 text-[8px] md:text-[9px] font-hero uppercase tracking-widest transition-all font-black">Reset Cam</button>
+                    </div>
+
+                    {/* Interactive Tooltip (Center) */}
+                    {!selectedId && !isMobile && (
+                       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-black/60 backdrop-blur-3xl px-8 py-4 rounded-full border border-white/10 animate-pulse z-20 pointer-events-none">
+                          <RotateCw size={14} className="text-neon-green" />
+                          <span className="text-[10px] font-hero uppercase tracking-[0.3em] font-black italic">Haptic Drag enabled for 360 Rotation</span>
+                       </div>
+                    )}
+                 </>
+                 
+                 {selectedId && (
+                    <div className="absolute bottom-24 md:top-1/2 right-4 md:right-10 md:-translate-y-1/2 p-6 md:p-10 bg-black/80 backdrop-blur-3xl border border-white/10 rounded-[32px] md:rounded-[48px] w-[90%] md:w-80 space-y-6 md:space-y-8 z-50 animate-in slide-in-from-bottom md:slide-in-from-right duration-500 shadow-3xl mx-auto left-0 md:left-auto">
+                       <h3 className="text-[8px] md:text-[10px] font-hero uppercase tracking-widest opacity-40 font-black italic">Advanced Projection Node</h3>
+                       
+                       <div className="space-y-4">
+                          <div className="flex justify-between text-[7px] md:text-[8px] font-hero opacity-30 uppercase tracking-widest">
+                             <span>Horizontal_Shift</span>
+                             <span>{Math.round(currentElements.find(e => e.id === selectedId).x)}</span>
+                          </div>
+                          <input 
+                             type="range" min="0" max="260" 
+                             value={currentElements.find(e => e.id === selectedId).x} 
+                             onChange={(e) => updateElement(selectedId, { x: parseInt(e.target.value) })}
+                             className="w-full accent-neon-green bg-white/5 h-2 rounded-full appearance-none cursor-pointer" 
+                          />
+                       </div>
+
+                       <div className="space-y-4">
+                          <div className="flex justify-between text-[7px] md:text-[8px] font-hero opacity-30 uppercase tracking-widest">
+                             <span>Vertical_Shift</span>
+                             <span>{Math.round(currentElements.find(e => e.id === selectedId).y)}</span>
+                          </div>
+                          <input 
+                             type="range" min="0" max="240" 
+                             value={currentElements.find(e => e.id === selectedId).y} 
+                             onChange={(e) => updateElement(selectedId, { y: parseInt(e.target.value) })}
+                             className="w-full accent-neon-blue bg-white/5 h-2 rounded-full appearance-none cursor-pointer" 
+                          />
+                       </div>
+
+                       <div className="space-y-4">
+                          <div className="flex justify-between text-[7px] md:text-[8px] font-hero opacity-30 uppercase tracking-widest">
+                             <span>Scale_Resolution</span>
+                             <span>{Math.round(currentElements.find(e => e.id === selectedId).width)}</span>
+                          </div>
+                          <input 
+                             type="range" min="20" max="260" 
+                             value={currentElements.find(e => e.id === selectedId).width} 
+                             onChange={(e) => {
+                                const newW = parseInt(e.target.value);
+                                const el = currentElements.find(e => e.id === selectedId);
+                                const aspect = el.height / el.width;
+                                updateElement(selectedId, { 
+                                   width: newW, 
+                                   height: el.type === 'image' ? newW * aspect : el.height 
+                                });
+                             }}
+                             className="w-full accent-white bg-white/5 h-2 rounded-full appearance-none cursor-pointer" 
+                          />
+                       </div>
+
+                       <button onClick={() => setSelectedId(null)} className="w-full py-4 md:py-4 bg-white/5 hover:bg-white/10 rounded-2xl text-[8px] md:text-[9px] font-hero uppercase tracking-widest border border-white/5 transition-all font-black">Detach Control</button>
+                    </div>
+                 )}
                 
                 {/* Master Mapping Overlay */}
-                <div className={`absolute top-[28%] left-1/2 -translate-x-1/2 w-[260px] h-[240px] border border-dashed rounded-[48px] transition-all duration-1000
+                <div className={`absolute top-[32%] left-1/2 -translate-x-1/2 w-[260px] h-[240px] border border-dashed rounded-[48px] transition-all duration-1000 z-10
                    ${gridVisible ? 'border-neon-green bg-neon-green/5 scale-100' : 'border-white/5 scale-[0.98]'}
+                   ${selectedId ? 'opacity-100' : 'opacity-0 hover:opacity-100'}
                 `}>
                    {gridVisible && <div className="absolute inset-0 pointer-events-none opacity-5 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:16px_16px]" />}
                    
@@ -283,65 +649,205 @@ const TshirtDesigner = () => {
              </div>
           </div>
 
-          {/* Commander Sidebar */}
-          <div className="w-full xl:w-[480px] flex flex-col gap-10">
+          {/* Commander Sidebar - Pure 3D Experience */}
+          <div className="w-full xl:w-[480px] flex flex-col gap-10 transition-all duration-700">
              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-12">
                 
                 {activeTab === 'config' && (
                    <div className="space-y-12 animate-in slide-in-from-right-10 duration-700">
                       <div>
                          <h3 className="text-[11px] font-hero uppercase tracking-[0.5em] opacity-30 mb-8 font-black">Base Fabric Spectrum</h3>
-                         <div className="grid grid-cols-2 gap-5">
+                         <div className="grid grid-cols-2 gap-5 mb-8">
                             {COLOR_VARIANTS.map(v => (
                                <button 
                                   key={v.id} 
-                                  onMouseEnter={() => setHoverColor(v)}
-                                  onMouseLeave={() => setHoverColor(null)}
-                                  onClick={() => { setActiveColor(v); setImageLoading(true); }}
-                                  className={`group relative p-2 rounded-[40px] border-2 transition-all duration-1000 overflow-hidden text-left
-                                    ${activeColor.id === v.id ? 'border-white bg-white/5 ring-8 ring-white/5' : 'border-white/5 opacity-50 hover:opacity-100 hover:bg-white/5 hover:translate-y-[-4px]'}
+                                  onClick={() => { setActiveColor(v); setCustomColor(v.hex); }}
+                                  className={`group relative p-2 rounded-[40px] border-2 transition-all duration-700 overflow-hidden text-left
+                                    ${activeColor.id === v.id ? 'border-white bg-white/5 ring-4 ring-white/5' : 'border-white/5 opacity-50 hover:opacity-100 hover:bg-white/5'}
                                   `}
                                >
                                   <div className="aspect-[4/3] rounded-[32px] overflow-hidden bg-[#0a0a0a] flex items-center justify-center relative inner-shadow-lg">
-                                     <img src={v.image} className="w-full h-full object-contain scale-125 group-hover:scale-110 transition-all duration-1000 drop-shadow-2xl" />
-                                     {v.popular && <div className="absolute top-4 right-4 px-3 py-1.5 bg-neon-green/90 text-black rounded-xl text-[7px] font-hero font-black uppercase shadow-lg">Popular</div>}
+                                     <img src={v.image} onError={(e) => (e.target.src = "/tshirts/tshirt-white.png")} className="w-full h-full object-contain scale-125 group-hover:scale-110 transition-all duration-700 drop-shadow-2xl" alt={v.name} />
                                   </div>
-                                  <div className="px-6 py-6 border-t border-white/5 flex items-center justify-between">
-                                     <div className="space-y-1">
-                                        <div className="text-[11px] font-hero uppercase tracking-widest font-black leading-none">{v.name}</div>
-                                        <div className="text-[8px] font-hero opacity-30 uppercase tracking-widest leading-none">IDENTITY_B_{v.id}</div>
-                                     </div>
-                                     <div className="w-6 h-6 rounded-full border border-white/10" style={{ backgroundColor: v.hex }} />
+                                  <div className="px-6 py-4 flex items-center justify-between">
+                                     <span className="text-[10px] font-hero uppercase tracking-widest font-black leading-none">{v.name}</span>
+                                     <div className="w-4 h-4 rounded-full border border-white/10" style={{ backgroundColor: v.hex }} />
                                   </div>
-                               </button>
+                                </button>
                             ))}
+                         </div>
+                         
+                         <div className="p-8 bg-white/5 rounded-[48px] border border-white/5 space-y-6">
+                            <h4 className="text-[9px] font-hero uppercase opacity-30 tracking-[0.4em] font-black italic">Experimental_Substrate</h4>
+                            <div className="flex items-center gap-8">
+                               <div className="relative group">
+                                  <input 
+                                     type="color" 
+                                     value={customColor} 
+                                     onChange={(e) => {
+                                        const c = e.target.value;
+                                        setCustomColor(c);
+                                        setActiveColor({ id: 'custom', name: 'Custom Alloy', hex: c, dark: true });
+                                     }}
+                                     className="w-20 h-20 rounded-full cursor-pointer bg-transparent border-0 outline-none appearance-none"
+                                  />
+                                  <Pipette className="absolute inset-0 m-auto pointer-events-none text-white/40 group-hover:text-white transition-all" size={24} />
+                               </div>
+                               <div className="flex-1 space-y-2">
+                                  <span className="text-[14px] font-hero font-black tracking-widest uppercase">{customColor}</span>
+                                  <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                                     <div className="h-full bg-neon-green" style={{ width: '100%' }} />
+                                  </div>
+                               </div>
+                            </div>
                          </div>
                       </div>
                    </div>
                 )}
 
-                {activeTab === 'layers' && (
-                   <div className="space-y-6 animate-in slide-in-from-right-10 duration-700">
-                      <h3 className="text-[11px] font-hero uppercase tracking-[0.5em] opacity-30 mb-4 font-black">Neural Stack ({activeSide})</h3>
-                      {currentElements.length === 0 && <div className="py-20 text-center opacity-10 uppercase tracking-[1em] font-hero text-[10px] border-2 border-dashed border-white/5 rounded-[40px]">Queue Clear</div>}
-                      {currentElements.slice().reverse().map(el => (
-                         <div key={el.id} className={`flex items-center justify-between p-6 rounded-[40px] border transition-all duration-700 ${selectedId === el.id ? 'bg-white/10 border-white/20 shadow-2xl' : 'bg-white/5 border-white/5 group hover:bg-white/10'}`}>
-                            <div className="flex items-center gap-6 cursor-pointer" onClick={() => setSelectedId(el.id)}>
-                               <div className={`p-5 rounded-2xl ${el.type === 'text' ? 'bg-neon-blue/20 text-neon-blue' : 'bg-neon-green/20 text-neon-green'}`}>
-                                  {el.type === 'text' ? <Type size={20}/> : <ImageIcon size={20}/>}
-                               </div>
-                               <div className="flex flex-col gap-1">
-                                  <span className="text-[12px] font-hero font-black uppercase tracking-widest">{el.type === 'text' ? el.content.slice(0, 15) : 'RASTER_ID'}</span>
-                                  <span className="text-[9px] font-hero opacity-30 uppercase tracking-widest">Index: {el.zIndex}</span>
-                               </div>
-                            </div>
-                            <div className="flex gap-4">
-                               <button onClick={() => updateElement(el.id, { visible: !el.visible })} className="opacity-40 hover:opacity-100 transition-all">{el.visible ? <Eye size={20}/> : <EyeOff size={20}/>}</button>
-                               <button onClick={() => deleteElement(el.id)} className="text-red-500 opacity-20 hover:opacity-100 hover:scale-125 transition-all"><Trash2 size={20}/></button>
+                {activeTab === 'text' && (() => {
+                    const selEl = currentElements.find(e => e.id === selectedId);
+                    const isText = selEl?.type === 'text';
+                    return (
+                       <div className="space-y-8 animate-in slide-in-from-right-10 duration-700">
+                          <button onClick={() => addElement('text')} className="w-full py-10 bg-white text-black font-hero font-black tracking-[0.4em] uppercase rounded-[44px] hover:scale-[1.01] transition-all shadow-3xl flex items-center justify-center gap-4">
+                             <Plus size={24} /> GEN_TEXT_CORE
+                          </button>
+
+                          {selectedId && isText && (
+                             <div className="space-y-8 p-10 bg-white/5 rounded-[56px] border border-white/5 shadow-2xl relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-neon-blue opacity-[0.03] blur-[60px]" />
+                                <div className="flex items-center gap-4 text-[10px] font-hero uppercase opacity-30 tracking-widest px-2"><Settings size={14}/> Node Config</div>
+                                
+                                <input 
+                                   type="text" 
+                                   value={selEl.content} 
+                                   onChange={e => updateElement(selectedId, { content: (e.target.value).toUpperCase() })}
+                                   placeholder="TERMINAL INPUT..."
+                                   className="w-full bg-black border border-white/10 rounded-[32px] px-10 py-8 text-xl font-hero outline-none focus:border-neon-green uppercase tracking-widest shadow-2xl transition-all" 
+                                />
+
+                                <div>
+                                   <div className="text-[9px] font-hero opacity-30 uppercase tracking-widest mb-4 italic">Neural Fonts</div>
+                                   <div className="grid grid-cols-2 gap-3">
+                                      {FONTS.map(f => (
+                                         <button key={f} onClick={() => updateElement(selectedId, { fontFamily: f })} style={{ fontFamily: f }} className={`py-5 px-6 rounded-[24px] border text-[11px] transition-all truncate ${selEl.fontFamily === f ? 'border-neon-green bg-neon-green/10 text-white font-black' : 'border-white/5 opacity-50 hover:bg-white/5'}`}>{f}</button>
+                                      ))}
+                                   </div>
+                                </div>
+
+                                <div className="flex gap-4">
+                                   <div className="flex-1 space-y-4">
+                                      <div className="flex justify-between text-[9px] font-hero opacity-30 uppercase tracking-widest"><span>Size</span><span>{selEl.fontSize}px</span></div>
+                                      <input type="range" min="12" max="120" value={selEl.fontSize} onChange={e => updateElement(selectedId, { fontSize: parseInt(e.target.value) })} className="w-full accent-neon-green bg-white/5 h-2 rounded-full cursor-pointer" />
+                                   </div>
+                                   <div className="space-y-4">
+                                      <div className="text-[9px] font-hero opacity-30 uppercase tracking-widest">Align</div>
+                                      <div className="flex p-1 bg-black rounded-2xl border border-white/5">
+                                         {[['left', <AlignLeft size={16}/>], ['center', <AlignCenter size={16}/>], ['right', <AlignRight size={16}/>]].map(([a, icon]) => (
+                                            <button key={a} onClick={() => updateElement(selectedId, { textAlign: a })} className={`p-3 rounded-xl transition-all ${selEl.textAlign === a ? 'bg-white text-black' : 'text-white/30 hover:text-white'}`}>{icon}</button>
+                                         ))}
+                                      </div>
+                                   </div>
+                                </div>
+
+                                <div>
+                                   <div className="text-[9px] font-hero opacity-30 uppercase tracking-widest mb-4 italic">Color Space</div>
+                                   <div className="flex flex-wrap gap-3">
+                                      {TEXT_COLORS.map(c => (
+                                         <button key={c} onClick={() => updateElement(selectedId, { color: c })} style={{ backgroundColor: c }} className={`w-10 h-10 rounded-full border-4 transition-all ${selEl.color === c ? 'border-white scale-110 shadow-xl' : 'border-transparent opacity-40 hover:opacity-100'}`} />
+                                      ))}
+                                   </div>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-3 pt-4">
+                                   {[['outline', 'Outline', selEl.outline], ['shadow', 'Shadow', selEl.shadow], ['glow', 'Glow', selEl.glow]].map(([key, label, val]) => (
+                                      <button 
+                                         key={key} 
+                                         onClick={() => updateElement(selectedId, { [key]: !val })} 
+                                         className={`py-4 rounded-[20px] border text-[9px] font-hero uppercase tracking-widest transition-all ${val ? 'border-neon-blue bg-neon-blue/10 text-white font-black' : 'border-white/5 opacity-40'}`}
+                                      >
+                                         {label}
+                                      </button>
+                                   ))}
+                                </div>
+                             </div>
+                          )}
+                       </div>
+                    );
+                })()}
+
+                {activeTab === 'graphics' && (
+                   <div className="space-y-12 animate-in slide-in-from-right-10 duration-700">
+                      <div>
+                         <h3 className="text-[11px] font-hero uppercase tracking-[0.5em] opacity-30 mb-8 font-black">Design Repository</h3>
+                         
+                         <div 
+                           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                           onDragLeave={() => setDragOver(false)}
+                           onDrop={(e) => { e.preventDefault(); setDragOver(false); handleImageUpload(e.dataTransfer.files[0]); }}
+                           className={`p-10 border-2 border-dashed rounded-[56px] flex flex-col items-center justify-center gap-6 transition-all duration-500 cursor-pointer mb-12
+                              ${dragOver ? 'border-neon-green bg-neon-green/5 scale-[1.02]' : 'border-white/10 bg-white/5 hover:border-white/20'}
+                           `}
+                           onClick={() => imageInputRef.current?.click()}
+                         >
+                            <input type="file" ref={imageInputRef} className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e.target.files[0])} />
+                            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-neon-blue"><Upload size={28} /></div>
+                            <div className="text-center">
+                               <span className="block text-[11px] font-hero uppercase tracking-widest font-black">Upload Raster Asset</span>
+                               <span className="block text-[8px] font-hero opacity-30 uppercase tracking-widest mt-2">PNG / JPG / WEBP — MAX 5MB</span>
                             </div>
                          </div>
-                      ))}
+
+                         <div className="space-y-8">
+                            <div className="flex items-center gap-4 text-[10px] font-hero uppercase opacity-30 tracking-widest italic"><Library size={14}/> Pre-compiled Assets</div>
+                            <div className="grid grid-cols-2 gap-4">
+                               {DESIGN_LIBRARY.map(item => (
+                                  <button 
+                                     key={item.id} 
+                                     onClick={() => addFromLibrary(item)}
+                                     className="p-8 bg-white/5 border border-white/5 rounded-[40px] flex flex-col items-center justify-center gap-4 hover:bg-white/10 transition-all group overflow-hidden"
+                                  >
+                                     <div className="flex-1 flex items-center justify-center py-4 px-2 scale-90 group-hover:scale-105 transition-all duration-700">
+                                        <span style={{ fontFamily: item.fontFamily, color: item.color, fontWeight: item.fontWeight }} className="text-xl uppercase whitespace-nowrap leading-none truncate w-full text-center">{item.label}</span>
+                                     </div>
+                                     <div className="w-full h-px bg-white/5" />
+                                     <span className="text-[8px] font-hero opacity-30 uppercase tracking-widest">{item.fontFamily}</span>
+                                  </button>
+                               ))}
+                            </div>
+                         </div>
+                      </div>
                    </div>
+                )}
+
+                {activeTab === 'queue' && (
+                    <div className="space-y-5 animate-in slide-in-from-right-10 duration-700">
+                       <h3 className="text-[11px] font-hero uppercase tracking-[0.5em] opacity-30 mb-4 font-black">Layers — {activeSide}</h3>
+                       {currentElements.length === 0 && <div className="py-20 text-center opacity-10 uppercase tracking-[1em] font-hero text-[10px] border-2 border-dashed border-white/5 rounded-[40px]">No Content</div>}
+                       {[...currentElements].sort((a,b) => b.zIndex - a.zIndex).map(el => (
+                          <div key={el.id} className={`flex items-center justify-between p-5 rounded-[36px] border transition-all duration-500 ${
+                            selectedId === el.id ? 'bg-white/10 border-white/20 shadow-2xl' : 'bg-white/5 border-white/5 hover:bg-white/10'
+                          }`}>
+                             <div className="flex items-center gap-4 cursor-pointer" onClick={() => !el.locked && setSelectedId(el.id)}>
+                                <div className={`p-4 rounded-xl ${el.type === 'text' ? 'bg-neon-blue/20 text-neon-blue' : 'bg-neon-green/20 text-neon-green'}`}>
+                                   {el.type === 'text' ? <Type size={16}/> : <ImageIcon size={16}/>}
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                   <span className="text-[11px] font-hero font-black uppercase tracking-widest truncate max-w-[130px]">{el.type === 'text' ? el.content.slice(0,14) : 'Image'}</span>
+                                   <span className="text-[8px] font-hero opacity-30 uppercase tracking-widest">index: {el.zIndex} {el.locked ? '🔒' : ''}</span>
+                                </div>
+                             </div>
+                             <div className="flex gap-2 flex-shrink-0">
+                                <button onClick={() => bringForward(el.id)} title="Bring Forward" className="p-2 rounded-xl border border-white/5 opacity-40 hover:opacity-100 hover:bg-white/10 transition-all"><ArrowUp size={14}/></button>
+                                <button onClick={() => sendBackward(el.id)} title="Send Backward" className="p-2 rounded-xl border border-white/5 opacity-40 hover:opacity-100 hover:bg-white/10 transition-all"><ArrowDown size={14}/></button>
+                                <button onClick={() => updateElement(el.id, { visible: !el.visible })} className="p-2 rounded-xl border border-white/5 opacity-40 hover:opacity-100 transition-all">{el.visible ? <Eye size={14}/> : <EyeOff size={14}/>}</button>
+                                <button onClick={() => updateElement(el.id, { locked: !el.locked })} className={`p-2 rounded-xl border transition-all ${ el.locked ? 'border-neon-blue/50 bg-neon-blue/10 text-neon-blue opacity-100' : 'border-white/5 opacity-40 hover:opacity-100'}`}>{el.locked ? <Lock size={14}/> : <Unlock size={14}/>}</button>
+                                <button onClick={() => deleteElement(el.id)} className="p-2 rounded-xl border border-white/5 text-red-500 opacity-20 hover:opacity-100 transition-all"><Trash2 size={14}/></button>
+                             </div>
+                          </div>
+                       ))}
+                    </div>
                 )}
 
                 {activeTab === 'allocation' && (
@@ -364,74 +870,68 @@ const TshirtDesigner = () => {
                          </div>
                       </div>
 
-                      <div className="p-12 bg-black/40 rounded-[64px] border border-white/5 space-y-8 relative overflow-hidden shadow-3xl">
+                      <div className="p-10 bg-black/40 rounded-[64px] border border-white/5 space-y-7 relative overflow-hidden shadow-3xl">
                          <Star className="absolute -top-10 -right-10 w-48 h-48 text-neon-green opacity-5 rotate-12" />
-                         <div className="flex justify-between items-center">
-                            <div className="space-y-1">
-                               <div className="text-[11px] font-hero uppercase tracking-widest opacity-40">Base Alloy</div>
-                               <div className="text-[11px] font-hero uppercase tracking-widest opacity-40">Neural Modules ({frontElements.length + backElements.length})</div>
-                               <div className="text-[11px] font-hero uppercase tracking-widest opacity-40">Special Protocols</div>
+                         <div className="flex justify-between items-center z-10 relative">
+                            <div className="space-y-2">
+                               <div className="text-[10px] font-hero uppercase tracking-widest opacity-30">Base Pattern</div>
+                               <div className="text-[10px] font-hero uppercase tracking-widest opacity-30">Text Synthesis (+{Math.round(pricing.textCharge / 50)} Layers)</div>
+                               <div className="text-[10px] font-hero uppercase tracking-widest opacity-30">Raster Infusion (+{Math.round(pricing.imageCharge / 100)} Assets)</div>
+                               <div className="text-[10px] font-hero uppercase tracking-widest opacity-30">Complexity Protocols</div>
                             </div>
-                            <div className="space-y-1 text-right font-hero text-[11px] font-bold">
-                               <div>₹{pricing.base.toLocaleString()}</div>
-                               <div>₹{pricing.elements.toLocaleString()}</div>
-                               <div className="text-neon-blue">₹{pricing.special.toLocaleString()}</div>
+                            <div className="space-y-2 text-right font-hero text-[11px] font-bold">
+                               <div className="opacity-60">₹{pricing.base.toLocaleString()}</div>
+                               <div className="opacity-60">₹{pricing.textCharge.toLocaleString()}</div>
+                               <div className="opacity-60">₹{pricing.imageCharge.toLocaleString()}</div>
+                               <div className="text-neon-blue">₹{pricing.complexityBonus.toLocaleString()}</div>
                             </div>
                          </div>
-                         <div className="h-px bg-white/5 w-full" />
-                         <div className="flex justify-between items-end">
-                            <span className="text-[12px] font-hero font-black opacity-30 tracking-[0.4em]">TOTAL ALLOC</span>
+                         <div className="h-px bg-white/5 w-full z-10 relative" />
+                         <div className="flex justify-between items-end z-10 relative">
+                            <div className="flex flex-col">
+                               <span className="text-[10px] font-hero font-black opacity-20 tracking-[0.4em]">TOTAL ALLOC</span>
+                               <span className="text-[8px] font-hero text-neon-green/50 uppercase tracking-widest font-black italic">Unit: ₹{pricing.unit}</span>
+                            </div>
                             <span className="text-6xl font-hero font-black text-white tracking-tighter shadow-neon-green/20">₹{pricing.total.toLocaleString()}</span>
                          </div>
                       </div>
                    </div>
                 )}
-                
-                {activeTab === 'text' && (
-                   <div className="space-y-10 animate-in slide-in-from-right-10 duration-700">
-                      <button onClick={() => addElement('text')} className="w-full py-10 bg-white text-black font-hero font-black tracking-[0.4em] uppercase rounded-[40px] hover:scale-[1.01] active:scale-[0.98] transition-all shadow-3xl flex items-center justify-center gap-4">
-                         <Plus size={24} /> GEN_TEXT_CORE
-                      </button>
-                      {selectedId && currentElements.find(e => e.id === selectedId)?.type === 'text' && (
-                         <div className="space-y-10 p-10 bg-white/5 rounded-[56px] border border-white/5 shadow-2xl relative">
-                            <div className="flex items-center gap-4 text-[10px] font-hero uppercase opacity-30 tracking-widest px-2"><Settings size={14}/> Module Configuration</div>
-                            <input type="text" value={currentElements.find(e => e.id === selectedId).content} onChange={(e) => updateElement(selectedId, { content: e.target.value.toUpperCase() })} className="w-full bg-black border border-white/10 rounded-[32px] px-10 py-10 text-xl font-hero outline-none focus:border-neon-green uppercase tracking-widest shadow-2xl transition-all" />
-                            <div className="grid grid-cols-2 gap-4">
-                               {FONTS.map(f => (
-                                  <button key={f} onClick={() => updateElement(selectedId, { fontFamily: f })} style={{ fontFamily: f }} className={`py-6 px-6 text-[11px] rounded-[24px] border transition-all ${currentElements.find(e => e.id === selectedId).fontFamily === f ? 'border-neon-green bg-neon-green/10 shadow-neon' : 'border-white/5 opacity-50 hover:bg-white/5'}`}>{f}</button>
-                               ))}
-                            </div>
-                            <div className="flex flex-wrap gap-5">
-                               {['#ffffff', '#000000', '#ff0000', '#00e5ff', '#00ff88', '#ffe100'].map(c => (
-                                  <button key={c} onClick={() => updateElement(selectedId, { color: c })} style={{ backgroundColor: c }} className={`w-12 h-12 rounded-full border-4 transition-all ${currentElements.find(e => e.id === selectedId).color === c ? 'border-white scale-125 shadow-3xl' : 'border-transparent opacity-40 hover:opacity-100'}`} />
-                               ))}
-                            </div>
-                         </div>
-                      )}
-                   </div>
-                )}
-
              </div>
 
              {/* Sticky Bottom Actions (Mobile Focused) */}
              <div className="pt-10 border-t border-white/5 px-2">
                 <div className="flex gap-4">
                    <button 
-                     onClick={addToCart} 
+                     onClick={prepareCheckout} 
                      disabled={(frontElements.length === 0 && backElements.length === 0) || isExporting} 
                      className={`flex-1 py-10 rounded-[48px] font-hero font-black uppercase tracking-[0.5em] transition-all relative overflow-hidden flex items-center justify-center gap-6
-                        ${(frontElements.length === 0 && backElements.length === 0) ? 'bg-white/5 text-white/10 cursor-not-allowed border border-white/5' : 'bg-neon-green text-black hover:scale-[1.01] shadow-neon-green/40 shadow-2xl'}
+                        ${(frontElements.length === 0 && backElements.length === 0) ? 'bg-white/5 text-white/10 cursor-not-allowed border border-white/5' : 'bg-neon-green text-black hover:scale-[1.01] shadow-neon-green/40 shadow-2xl active:scale-[0.98]'}
                      `}
                    >
                       {isExporting ? <RefreshCcw className="animate-spin" size={24} /> : <Zap size={28} />}
-                      {isExporting ? 'Capturing Twin...' : 'COMMIT ALLOCATION'}
+                      {isExporting ? 'PROCESSING...' : 'COMMIT ALLOCATION'}
                    </button>
                 </div>
              </div>
+             
+             {/* Sticky Conversion Bar (Mobile Only - Global Overlay) */}
+             {isMobile && !selectedId && (
+                <div className="fixed bottom-0 left-0 right-0 p-8 bg-[#020202]/95 backdrop-blur-3xl border-t border-white/5 z-[100] flex items-center justify-between animate-in slide-in-from-bottom duration-1000 shadow-[0_-20px_60px_rgba(0,0,0,0.8)]">
+                   <div className="flex flex-col">
+                      <span className="text-[8px] font-hero opacity-30 uppercase tracking-[0.6em] mb-1">Total INR</span>
+                      <span className="text-3xl font-hero font-black text-white leading-none">₹{pricing.total.toLocaleString()}</span>
+                   </div>
+                   <button onClick={prepareCheckout} disabled={isExporting} className="px-12 py-5 bg-neon-green text-black rounded-full font-hero font-black uppercase text-[10px] tracking-widest shadow-neon flex items-center gap-4 active:scale-95 transition-all">
+                      {isExporting ? <RefreshCcw className="animate-spin" size={18} /> : <Zap size={18} />} {isExporting ? 'WAITING...' : 'ORDER NOW'}
+                   </button>
+                </div>
+             )}
           </div>
 
+
         </div>
-      ) : (
+      ) : currentView === 'checkout' ? (
         /* Multi-Page Protocol Checkout */
         <div className="flex flex-col items-center justify-center p-28 bg-[#010101] rounded-[80px] border border-white/5 text-center animate-in zoom-in-95 duration-1000 relative shadow-3xl overflow-hidden min-h-[900px]">
            <Sparkles className="absolute top-20 right-20 w-40 h-40 text-neon-green opacity-10 animate-pulse" />
@@ -442,38 +942,113 @@ const TshirtDesigner = () => {
            
            <div className="w-full max-w-3xl space-y-8 text-left z-10 px-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                 <div className="space-y-4">
+                 <div className="space-y-3">
                     <label className="text-[10px] font-hero opacity-40 uppercase tracking-[0.2em] ml-4">Recipient Name</label>
-                    <input type="text" placeholder="LEGAL ID" className="w-full bg-white/5 border border-white/10 p-10 rounded-[32px] font-hero text-[11px] tracking-widest uppercase outline-none focus:border-neon-green focus:bg-white/10 transition-all shadow-inner" />
+                    <input 
+                      type="text" 
+                      placeholder="LEGAL ID" 
+                      value={checkoutData.name}
+                      onChange={(e) => setCheckoutData({ ...checkoutData, name: e.target.value })}
+                      className={`w-full bg-white/5 border ${orderErrors.name ? 'border-red-500/50' : 'border-white/10'} p-10 rounded-[32px] font-hero text-[11px] tracking-widest uppercase outline-none focus:border-neon-green transition-all`} 
+                    />
+                    {orderErrors.name && <p className="text-[9px] text-red-500 font-hero uppercase tracking-widest ml-4">{orderErrors.name}</p>}
                  </div>
-                 <div className="space-y-4">
+                 <div className="space-y-3">
                     <label className="text-[10px] font-hero opacity-40 uppercase tracking-[0.2em] ml-4">Neural Comm Link</label>
-                    <input type="text" placeholder="+91 XXXXX XXXXX" className="w-full bg-white/5 border border-white/10 p-10 rounded-[32px] font-hero text-[11px] tracking-widest uppercase outline-none focus:border-neon-green focus:bg-white/10 transition-all shadow-inner" />
+                    <input 
+                      type="text" 
+                      placeholder="+91 XXXXX XXXXX" 
+                      value={checkoutData.phone}
+                      onChange={(e) => setCheckoutData({ ...checkoutData, phone: e.target.value })}
+                      className={`w-full bg-white/5 border ${orderErrors.phone ? 'border-red-500/50' : 'border-white/10'} p-10 rounded-[32px] font-hero text-[11px] tracking-widest uppercase outline-none focus:border-neon-green transition-all`} 
+                    />
+                    {orderErrors.phone && <p className="text-[9px] text-red-500 font-hero uppercase tracking-widest ml-4">{orderErrors.phone}</p>}
                  </div>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-3">
                  <label className="text-[10px] font-hero opacity-40 uppercase tracking-[0.2em] ml-4">Deployment Zone (Coordinates)</label>
-                 <input type="text" placeholder="STREET / BUILDING / LOCALITY" className="w-full bg-white/5 border border-white/10 p-10 rounded-[32px] font-hero text-[11px] tracking-widest uppercase outline-none focus:border-neon-green focus:bg-white/10 transition-all shadow-inner" />
+                 <input 
+                   type="text" 
+                   placeholder="STREET / BUILDING / LOCALITY" 
+                   value={checkoutData.address}
+                   onChange={(e) => setCheckoutData({ ...checkoutData, address: e.target.value })}
+                   className={`w-full bg-white/5 border ${orderErrors.address ? 'border-red-500/50' : 'border-white/10'} p-10 rounded-[32px] font-hero text-[11px] tracking-widest uppercase outline-none focus:border-neon-green transition-all`} 
+                 />
+                 {orderErrors.address && <p className="text-[9px] text-red-500 font-hero uppercase tracking-widest ml-4">{orderErrors.address}</p>}
               </div>
               <div className="grid grid-cols-2 gap-8">
-                 <div className="space-y-4">
+                 <div className="space-y-3">
                     <label className="text-[10px] font-hero opacity-40 uppercase tracking-[0.2em] ml-4">City Grid</label>
-                    <input type="text" placeholder="BANGALORE_CORE" className="w-full bg-white/5 border border-white/10 p-10 rounded-[32px] font-hero text-[11px] tracking-widest uppercase outline-none focus:border-neon-green focus:bg-white/10 transition-all shadow-inner" />
+                    <input 
+                      type="text" 
+                      placeholder="BANGALORE_CORE" 
+                      value={checkoutData.city}
+                      onChange={(e) => setCheckoutData({ ...checkoutData, city: e.target.value })}
+                      className={`w-full bg-white/5 border ${orderErrors.city ? 'border-red-500/50' : 'border-white/10'} p-10 rounded-[32px] font-hero text-[11px] tracking-widest uppercase outline-none focus:border-neon-green transition-all`} 
+                    />
+                    {orderErrors.city && <p className="text-[9px] text-red-500 font-hero uppercase tracking-widest ml-4">{orderErrors.city}</p>}
                  </div>
-                 <div className="space-y-4">
+                 <div className="space-y-3">
                     <label className="text-[10px] font-hero opacity-40 uppercase tracking-[0.2em] ml-4">PIN Protocol</label>
-                    <input type="text" placeholder="XXXXXX" className="w-full bg-white/5 border border-white/10 p-10 rounded-[32px] font-hero text-[11px] tracking-widest uppercase outline-none focus:border-neon-green focus:bg-white/10 transition-all shadow-inner" />
-              </div>
+                    <input 
+                      type="text" 
+                      placeholder="XXXXXX" 
+                      value={checkoutData.pincode}
+                      onChange={(e) => setCheckoutData({ ...checkoutData, pincode: e.target.value })}
+                      className={`w-full bg-white/5 border ${orderErrors.pincode ? 'border-red-500/50' : 'border-white/10'} p-10 rounded-[32px] font-hero text-[11px] tracking-widest uppercase outline-none focus:border-neon-green transition-all`} 
+                    />
+                    {orderErrors.pincode && <p className="text-[9px] text-red-500 font-hero uppercase tracking-widest ml-4">{orderErrors.pincode}</p>}
+                 </div>
               </div>
               <div className="pt-10 flex flex-col gap-6 items-center">
-                 <button onClick={() => alert("FORGE INITIALIZED: Physical deployment payload dispatched across Indian Logistics Corridors.")} className="w-full py-14 bg-white text-black font-hero font-black uppercase tracking-[0.6em] rounded-[60px] shadow-neon-white hover:bg-neon-green hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-8 text-2xl">
-                    <CreditCard size={36} /> AUTHORIZE INR {pricing.total.toLocaleString()} ALLOC
+                 <button 
+                   onClick={placeOrder} 
+                   disabled={isProcessingPayment}
+                   className={`w-full py-14 font-hero font-black uppercase tracking-[0.6em] rounded-[60px] shadow-neon-white transition-all flex items-center justify-center gap-8 text-2xl
+                     ${isProcessingPayment ? 'bg-white/10 text-white/20 cursor-wait' : 'bg-white text-black hover:bg-neon-green hover:scale-[1.02] active:scale-[0.98]'}
+                   `}
+                 >
+                    {isProcessingPayment ? <RefreshCcw size={36} className="animate-spin" /> : <CreditCard size={36} />} 
+                    {isProcessingPayment ? 'AUTHORIZING...' : `AUTHORIZE INR ${pricing.total.toLocaleString()} ALLOC`}
                  </button>
                  <span className="text-[9px] font-hero opacity-20 uppercase tracking-[0.5em] group cursor-pointer hover:opacity-50 transition-all flex items-center gap-3">
                     <Truck size={14} /> SECURE CRYPTOGRAPHIC SHIPMENT GUARANTEED
                  </span>
               </div>
            </div>
+        </div>
+      ) : (
+        /* Success View - Deployment Confirmation */
+        <div className="flex flex-col items-center justify-center p-28 bg-[#010101] rounded-[80px] border border-white/5 text-center animate-in zoom-in duration-1000 relative shadow-3xl overflow-hidden min-h-[900px]">
+           <div className="absolute inset-0 bg-neon-green/5 animate-pulse" />
+           <div className="w-48 h-48 bg-neon-green text-black rounded-full flex items-center justify-center mb-16 shadow-neon-green scale-110 animate-bounce"><Zap size={80} /></div>
+           <h3 className="text-8xl font-hero font-black uppercase tracking-tighter mb-8 text-white">FORGE <span className="text-neon-green">INITIALIZED</span></h3>
+           <p className="text-[14px] font-hero opacity-40 tracking-[0.8em] max-w-2xl mx-auto mb-20 uppercase font-black">Manifest {lockedOrder?.id || 'UF-INTERNAL'} Locked. Physical Payload Dispatched to Regional Logistics Rail.</p>
+           
+           <div className="w-full max-w-2xl bg-white/5 border border-white/10 p-14 rounded-[64px] space-y-8 backdrop-blur-3xl mb-20">
+              <div className="flex justify-between items-center text-[11px] font-hero uppercase tracking-widest opacity-40">
+                 <span>Protocol Reference</span>
+                 <span>Alloc Total</span>
+              </div>
+              <div className="flex justify-between items-end">
+                 <span className="text-3xl font-hero font-black text-white">{lockedOrder?.id || 'UF-LOG-01'}</span>
+                 <span className="text-6xl font-hero font-black text-white text-neon-green shadow-neon-green/20">₹{(lockedOrder?.price?.total || pricing.total).toLocaleString()}</span>
+              </div>
+              <div className="h-px bg-white/5 w-full" />
+              <div className="flex justify-between items-center text-[10px] font-hero uppercase tracking-widest">
+                 <span className="text-white/30 italic">ETA: 3–5 Days India-Wide</span>
+                 <span className="text-neon-blue font-black flex items-center gap-2"> <Truck size={14} /> SECURE RAIL DISPATCH</span>
+              </div>
+           </div>
+
+           <button onClick={() => { 
+             setFrontElements([]); 
+             setBackElements([]); 
+             setLockedOrder(null);
+             setCurrentView('editor'); 
+           }} className="px-20 py-10 bg-white text-black font-hero font-black uppercase tracking-[0.8em] rounded-full shadow-neon-white hover:bg-neon-green transition-all hover:scale-105 active:scale-95 text-xl">
+              RETURN TO FORGE
+           </button>
         </div>
       )}
 
@@ -494,7 +1069,11 @@ const TshirtDesigner = () => {
                   {cart.map(item => (
                      <div key={item.id} className="p-12 bg-white/[0.03] rounded-[72px] border border-white/5 flex flex-col md:flex-row gap-16 relative group hover:border-white/20 transition-all duration-1000 shadow-[0_40px_80px_rgba(0,0,0,1)]">
                         <div className="w-full md:w-60 h-60 bg-black/80 rounded-[56px] border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0 group-hover:scale-105 transition-transform duration-1000 relative">
-                           <img src={item.designImage} className="w-full h-full object-contain p-8 animate-in zoom-in duration-1000" />
+                           <img 
+                              src={item.designImage || "/tshirts/tshirt-white.png"} 
+                              onError={(e) => e.target.src = "/tshirts/tshirt-white.png"}
+                              className="w-full h-full object-contain p-8 animate-in zoom-in duration-1000" 
+                           />
                            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-all" />
                         </div>
                         <div className="flex-1 flex flex-col justify-center gap-6">
